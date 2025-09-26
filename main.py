@@ -1,6 +1,10 @@
+import json
+
 class Book:
-    # 1. Тебе понадобится добавить ещё жанр, оценка прочитанного (0-10 баллов), язык книги
+    """Класс для представления книги в библиотеке."""
+
     def __init__(self, title, author, status, genre, score, language):
+        """Инициализирует экземпляр книги с заданными атрибутами."""
         self.title = title
         self.author = author
         self.status = status
@@ -9,28 +13,67 @@ class Book:
         self.language =language
 
     def __repr__(self):
+        """Возвращает строковое представление объекта Book для отладки."""
         return f"Book(title='{self.title}', author='{self.author}')"
 
+    def to_dict(self):
+        """Преобразует объект Book в словарь, готовый для сохранения в JSON."""
+        return {
+            'title': self.title,
+            'author': self.author,
+            'status': self.status,
+            'genre': self.genre,
+            'score': self.score,
+            'language': self.language
+        }
+
 class Library:
+    """Класс для управления коллекцией книг."""
+
     def __init__(self):
+        """Инициализирует пустую библиотеку."""
         self.books = []
 
     def add_book(self, book):
+        """Добавляет объект книги в коллекцию библиотеки."""
         self.books.append(book)
 
-book1 = Book("Унесенные ветром", "Маргарет Митчелл", "Прочитано", "Роман", 10, "Русский")
-book2 = Book("Тим Талер, или Проданный смех", "Джеймс Крюс", "Прочитано", "Повесть", 10, "Русский")
-print(book1, book2)
+    def save_to_file(self, filename='library.json'):
+        """Сохраняет список книг в JSON-файл."""
+        data_to_save = []
+        for book in self.books:
+            data_to_save.append(book.to_dict())
 
+        with open(filename, 'w', encoding='utf-8') as f:
+            #ensure_ascii=False — для корректного отображения кириллицы.
+            #indent=4 — делает файл красивым и читаемым для человека, с отступами.
+            json.dump(data_to_save, f, ensure_ascii=False, indent=4)
+
+        print(f"Библиотека успешно сохранена в файл {filename}")
+
+    def load_from_file(self, filename='library.json'):
+        """Читает список книг в JSON-файле."""
+        # Шаг 1: Ставим "ловушку для ошибок"
+        try:
+            # Шаг 2: Пробуем открыть файл на чтение ('r')
+            with open(filename, 'r', encoding='utf-8') as f:
+                # Шаг 3: Загружаем из файла список словарей
+                list_of_dicts = json.load(f)
+                # Шаг 4: Проходимся циклом по этому списку
+                for book_dict in list_of_dicts:
+                    # Шаг 5: Для каждого словаря создаем "живой" объект Book
+                    new_book = Book(**book_dict)
+                    # Шаг 6: Добавляем воссозданную книгу в нашу библиотеку
+                    self.add_book(new_book)
+
+            print(f"Библиотека успешно загружена из файла {filename}")
+        # Шаг 7: Если в "ловушку" попалась ошибка "Файл не найден"
+        except FileNotFoundError:
+            # Шаг 8: Просто выводим сообщение и ничего не делаем.
+            # Библиотека останется пустой, как и было задумано.
+            print(f"Файл {filename} не найден. Создана новая пустая библиотека.")
+
+# 1. Создаем пустую библиотеку
 my_library = Library()
-my_library.add_book(book1)
-my_library.add_book(book2)
-print(my_library.books)
-
-# Советы и вопросы
-# 2. Не путай словари и объекты. Понятно, почему ты их путаешь, но проясни разницу в своей голове. Это крайне важно
-# 3. В гитхаб тебе нужно сделать так же, как ты делала в проектe бота для телеграм - protected main branch и ветки под features
-# 4. ответь себе на вопрос - зачем нужны переменные класса и переменные экземпляра
-# 5. как это связано с конструктором?
-# 6. Markdown включается с помощью ``` ```
-
+# 2. Сразу же пытаемся загрузить в нее данные из файла
+my_library.load_from_file()
